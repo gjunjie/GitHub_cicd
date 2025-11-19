@@ -1,0 +1,16 @@
+# 复制此文件为 terraform.tfvars 并填入您的实际值
+# cp terraform.tfvars.example terraform.tfvars
+
+# 您的 GitHub 用户名或组织名
+github_org_or_user = "your-github-username"
+
+# 您的 GitHub 仓库名
+github_repo_name = "your-repo-name"
+
+# 您的 OpenAI API Key (敏感信息，不要提交到 Git)
+openai_api_key = "sk-your-openai-api-key-here"
+
+# 是否由 Terraform 管理创建 App Runner 服务
+# 默认 false，交由 GitHub Actions 部署
+manage_apprunner_via_terraform = false
+
