@@ -96,6 +96,18 @@ resource "aws_iam_policy" "github_actions_policy" {
           aws_iam_role.apprunner_instance_role.arn,
           aws_iam_role.apprunner_service_role.arn
         ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:CreateServiceLinkedRole"
+        ],
+        Resource = "arn:aws:iam::*:role/aws-service-role/apprunner.amazonaws.com/AWSServiceRoleForAppRunner",
+        Condition = {
+          StringEquals = {
+            "iam:AWSServiceName": "apprunner.amazonaws.com"
+          }
+        }
       }
     ]
   })
@@ -136,13 +148,10 @@ resource "aws_iam_role_policy_attachment" "github_actions" {
 # -----------------------------------------------------------------
 
 variable "openai_api_key" {
-  description = "OpenAI API Key (将存入 Secrets Manager)"
+  description = "OpenAI API Key (将存入 Secrets Manager) - Optional"
   type        = string
   sensitive   = true
-  validation {
-    condition     = length(var.openai_api_key) > 0
-    error_message = "OpenAI API Key 不能为空。"
-  }
+  default     = ""
 }
 
 variable "manage_apprunner_via_terraform" {
@@ -195,6 +204,7 @@ resource "aws_iam_role" "apprunner_instance_role" {
 }
 
 resource "aws_iam_role_policy" "apprunner_secrets" {
+  count = var.openai_api_key != "" ? 1 : 0
   name = "apprunner-secrets-policy"
   role = aws_iam_role.apprunner_instance_role.name
   policy = jsonencode({
@@ -221,9 +231,9 @@ resource "aws_apprunner_service" "rag_app_service" {
       image_repository_type = "ECR"
       image_configuration {
         port = "8080"
-        runtime_environment_secrets = {
+        runtime_environment_secrets = var.openai_api_key != "" ? {
           OPENAI_API_KEY = aws_secretsmanager_secret.openai_key.arn
-        }
+        } : {}
       }
     }
     auto_deployments_enabled = false # 我们用 GitHub Actions 手动触发
